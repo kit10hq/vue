@@ -1,0 +1,58 @@
+{
+	"name": "@kit10/vue",
+	"version": "0.1.0-dev",
+	"description": "Vue.js plugin for kit10.",
+	"publishConfig": {
+		"access": "public"
+	},
+	"type": "module",
+	"exports": {
+		".": {
+			"types": "./dist/plugin/main.d.mts",
+			"import": "./dist/plugin/main.mjs"
+		},
+		"./element": {
+			"types": "./dist/element/main.d.mts",
+			"import": "./dist/element/main.mjs"
+		}
+	},
+	"engines": {
+		"node": ">=16"
+	},
+	"dependencies": {
+		"@vue/compiler-sfc": "3.5.35",
+		"oxc-parser": "0.133.0"
+	},
+	"peerDependencies": {
+		"kit10": "../../kit10",
+		"vue": "3.5.27"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.4.10",
+		"@kirick/lint": "0.3.1",
+		"@types/node": "22.15.13",
+		"eslint": "10.2.0",
+		"oxlint": "1.58.0",
+		"publint": "0.3.21",
+		"tsdown": "0.22.0",
+		"typescript": "6.0.2",
+		"unplugin-unused": "0.5.7"
+	},
+	"scripts": {
+		"build": "tsdown src/plugin/main.ts src/element/main.ts --unused --dts --format esm",
+		"check": "bun run lint && bun run build && bun run test",
+		"lint": "biome format && oxlint && eslint . && tsc",
+		"test": "echo 'No tests specified'"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/kit10hq/vue.git"
+	},
+	"keywords": [],
+	"author": "Daniil Kirichenko (https://twitter.com/kirickme)",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/kit10hq/vue/issues"
+	},
+	"homepage": "https://github.com/kit10hq/vue#readme"
+}
