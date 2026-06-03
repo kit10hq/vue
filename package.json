@@ -24,7 +24,7 @@
 		"oxc-parser": "0.133.0"
 	},
 	"peerDependencies": {
-		"kit10": "../kit10",
+		"kit10": "github:kit10hq/kit10#799dfb43aaf67c5460926b3d2f25ac8b7b548044",
 		"vue": "3.5.27"
 	},
 	"devDependencies": {
