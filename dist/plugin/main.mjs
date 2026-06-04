@@ -1,8 +1,6 @@
-import { randomUUID } from "node:crypto";
 import { compileScript, compileStyle, parse } from "@vue/compiler-sfc";
 import { parseSync } from "oxc-parser";
 //#region src/plugin/main.ts
-const CSS_PLACEHOLDER = randomUUID();
 /**
 * Generates a random string.
 * @returns -
@@ -10,9 +8,9 @@ const CSS_PLACEHOLDER = randomUUID();
 function randomString() {
 	return Math.random().toString(36).slice(2, 9);
 }
-const compileVuePlugin = {
+const vuePlugin = {
 	filter: /\.vue$/u,
-	transform(artifact, options) {
+	async transform(artifact, options) {
 		artifact.meta.vue = true;
 		const id = randomString();
 		const name_generic = artifact.path.replace(/\.vue$/u, "").replaceAll("/", "-");
@@ -33,15 +31,30 @@ const compileVuePlugin = {
 		}).content;
 		const has_styles = sfc.descriptor.styles.length > 0;
 		let has_scoped_styles = false;
+		const cssArtifacts = /* @__PURE__ */ new Set();
+		const promises = [];
 		for (const style of sfc.descriptor.styles) {
 			if (style.scoped) has_scoped_styles = true;
-			const cssArtifact = artifact.create(style.lang ?? "css", style.content);
+			const cssArtifact = artifact.create(style.content, { ext: style.lang ?? "css" });
 			cssArtifact.meta.scoped = style.scoped;
+			cssArtifacts.add(cssArtifact);
+			promises.push(cssArtifact.process());
+		}
+		await Promise.all(promises);
+		let css = "";
+		for (const cssArtifact of cssArtifacts) {
+			css += compileStyle({
+				source: cssArtifact.text(),
+				filename: artifact.path,
+				id: artifact.id,
+				scoped: cssArtifact.meta.scoped === true
+			}).code;
+			cssArtifact.delete();
 		}
 		const oxc = parseSync("anonymous.ts", contents_script_ts);
 		const contents_result = [];
 		for (const node of oxc.program.body) if (node.type === "ExportDefaultDeclaration") {
-			contents_result.push("import { VueCustomElement as _VueCustomElement, defineElement as _defineElement } from \"@kit10/vue/element\";", contents_script_ts.slice(0, node.start), `const __sfc__ = ${contents_script_ts.slice(node.declaration.start, node.declaration.end)};`, contents_script_ts.slice(node.end), `__sfc__.name ??= ${JSON.stringify(name_generic)};`, ...has_styles && has_scoped_styles ? [`__sfc__.__scopeId = "data-v-${id}";`] : [], ...has_styles ? [`const __css = "${CSS_PLACEHOLDER}";`] : [], "if (__sfc__.customElement === true) {", "	class _Element extends _VueCustomElement {", "		constructor() {", "			super(__sfc__);", "		}", "	}", `\t_defineElement(__sfc__.name, _Element${has_styles ? `, __css` : ""});`, "}", ...has_styles ? [
+			contents_result.push("import { VueCustomElement as _VueCustomElement, defineElement as _defineElement } from \"@kit10/vue/element\";", contents_script_ts.slice(0, node.start), `const __sfc__ = ${contents_script_ts.slice(node.declaration.start, node.declaration.end)};`, contents_script_ts.slice(node.end), `__sfc__.name ??= ${JSON.stringify(name_generic)};`, ...has_styles && has_scoped_styles ? [`__sfc__.__scopeId = "data-v-${id}";`] : [], ...has_styles ? [`const __css = ${JSON.stringify(css)};`] : [], "if (__sfc__.customElement === true) {", "	class _Element extends _VueCustomElement {", "		constructor() {", "			super(__sfc__);", "		}", "	}", `\t_defineElement(__sfc__.name, _Element${has_styles ? `, __css` : ""});`, "}", ...has_styles ? [
 				"else {",
 				"	const element = document.createElement(\"style\");",
 				`\telement.dataset.element = __sfc__.name;`,
@@ -56,22 +69,5 @@ const compileVuePlugin = {
 		artifact.update(contents_result.join("\n"));
 	}
 };
-const vueCssPlugin = {
-	filter: "*",
-	transform(artifact) {
-		if (artifact.meta.vue !== true) return;
-		const [cssArtifact] = artifact.dependencies;
-		if (!cssArtifact) return;
-		const css = compileStyle({
-			source: cssArtifact.text(),
-			filename: cssArtifact.path,
-			id: artifact.id,
-			scoped: cssArtifact.meta.scoped === true
-		}).code;
-		let css_escaped = JSON.stringify(css).slice(1, -1);
-		artifact.update(artifact.text().replace(CSS_PLACEHOLDER, css_escaped));
-		cssArtifact.delete();
-	}
-};
 //#endregion
-export { compileVuePlugin, vueCssPlugin };
+export { vuePlugin };

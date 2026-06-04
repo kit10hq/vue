@@ -9,7 +9,9 @@ test-d/
 
 # ignore configs
 .luarc.json
+.oxlintrc.json
 biome.json
+bunfig.toml
 # these names cannot be declared using {js,mjs,cjs} syntax
 # is this case rule n/no-unpublished-import yells at me
 eslint.config.js
@@ -34,3 +36,9 @@ yarn.lock
 # ignore IDE files
 .idea
 .nova
+.vscode
+.zed
+
+# ignore packages
+*.tar.gz
+*.tgz

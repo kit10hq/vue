@@ -1,9 +1,6 @@
-import { randomUUID } from 'node:crypto';
 import { compileScript, compileStyle, parse } from '@vue/compiler-sfc';
-import type { Plugin } from 'kit10';
+import type { Artifact, Plugin } from 'kit10';
 import { parseSync } from 'oxc-parser';
-
-const CSS_PLACEHOLDER = randomUUID();
 
 /**
  * Generates a random string.
@@ -13,9 +10,9 @@ function randomString(): string {
 	return Math.random().toString(36).slice(2, 9);
 }
 
-export const compileVuePlugin: Plugin = {
+export const vuePlugin: Plugin = {
 	filter: /\.vue$/u,
-	transform(artifact, options) {
+	async transform(artifact, options) {
 		artifact.meta.vue = true;
 
 		const id = randomString();
@@ -39,26 +36,35 @@ export const compileVuePlugin: Plugin = {
 			},
 		}).content;
 
-		// let is_style_scoped = false;
-		// const result_style: string[] = [];
 		const has_styles = sfc.descriptor.styles.length > 0;
 		let has_scoped_styles = false;
+		const cssArtifacts = new Set<Artifact>();
+		const promises = [];
 		for (const style of sfc.descriptor.styles) {
 			if (style.scoped) {
 				has_scoped_styles = true;
 			}
 
-			const cssArtifact = artifact.create(style.lang ?? 'css', style.content);
+			const cssArtifact = artifact.create(style.content, {
+				ext: style.lang ?? 'css',
+			});
 			cssArtifact.meta.scoped = style.scoped;
+			cssArtifacts.add(cssArtifact);
+			promises.push(cssArtifact.process());
+		}
 
-			// let { content } = style;
-			// if (style.lang === 'scss') {
-			// 	content = compileScssString(path, content);
-			// }
+		await Promise.all(promises);
 
-			// content = lightningCss(content, path);
+		let css = '';
+		for (const cssArtifact of cssArtifacts) {
+			css += compileStyle({
+				source: cssArtifact.text(),
+				filename: artifact.path,
+				id: artifact.id,
+				scoped: cssArtifact.meta.scoped === true,
+			}).code;
 
-			// is_style_scoped ||= style.scoped ?? false;
+			cssArtifact.delete();
 		}
 
 		const oxc = parseSync('anonymous.ts', contents_script_ts);
@@ -74,7 +80,7 @@ export const compileVuePlugin: Plugin = {
 					...(has_styles && has_scoped_styles
 						? [`__sfc__.__scopeId = "data-v-${id}";`]
 						: []),
-					...(has_styles ? [`const __css = "${CSS_PLACEHOLDER}";`] : []),
+					...(has_styles ? [`const __css = ${JSON.stringify(css)};`] : []),
 					// 'console.log(__sfc__.name , __sfc__.customElement);',
 					'if (__sfc__.customElement === true) {',
 					// '\tconsole.log("register", __sfc__.name , "as custom element");',
@@ -111,36 +117,7 @@ export const compileVuePlugin: Plugin = {
 			throw new Error('No default export found in Vue script.');
 		}
 
-		// console.log('----------', path, '----------');
-		// console.log(contents_result.join('\n'));
-
 		artifact.updateExt('ts');
 		artifact.update(contents_result.join('\n'));
-	},
-};
-
-export const vueCssPlugin: Plugin = {
-	filter: '*',
-	transform(artifact) {
-		if (artifact.meta.vue !== true) {
-			return;
-		}
-
-		const [cssArtifact] = artifact.dependencies;
-		if (!cssArtifact) {
-			return;
-		}
-
-		const css = compileStyle({
-			source: cssArtifact.text(),
-			filename: cssArtifact.path,
-			id: artifact.id,
-			scoped: cssArtifact.meta.scoped === true,
-		}).code;
-
-		let css_escaped = JSON.stringify(css).slice(1, -1);
-		artifact.update(artifact.text().replace(CSS_PLACEHOLDER, css_escaped));
-
-		cssArtifact.delete();
 	},
 };

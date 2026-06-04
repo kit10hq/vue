@@ -1,7 +1,6 @@
 import { Plugin } from "kit10";
 
 //#region src/plugin/main.d.ts
-declare const compileVuePlugin: Plugin;
-declare const vueCssPlugin: Plugin;
+declare const vuePlugin: Plugin;
 //#endregion
-export { compileVuePlugin, vueCssPlugin };
+export { vuePlugin };
