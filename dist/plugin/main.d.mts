@@ -1,4 +1,4 @@
-import { Plugin } from "kit10";
+import { Plugin } from "vite";
 
 //#region src/plugin/main.d.ts
 declare const vuePlugin: Plugin;

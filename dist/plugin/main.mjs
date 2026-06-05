@@ -1,73 +1,213 @@
 import { compileScript, compileStyle, parse } from "@vue/compiler-sfc";
 import { parseSync } from "oxc-parser";
+import { transformWithOxc } from "vite";
+import fs from "node:fs/promises";
+import crypto from "node:crypto";
+import nodePath from "node:path";
+//#region src/plugin/utils.ts
+/** Returns the path without query/hash parts. */
+function cleanUrl(id) {
+	return id.replace(/[?#].*$/u, "");
+}
+/** Normalizes ids so cache keys match Vite's POSIX-style paths. */
+function normalizePath(path) {
+	return path.replaceAll(nodePath.win32.sep, "/");
+}
+/** Creates the stable scope id used by Vue template and style compilers. */
+function createScopeId(filename) {
+	return crypto.createHash("sha256").update(normalizePath(filename)).digest("hex").slice(0, 8);
+}
+/** Creates the fallback component/custom-element name. */
+function createGenericName(filename, root) {
+	return normalizePath(nodePath.relative(root, filename)).replace(/\.vue$/u, "").replaceAll("/", "-");
+}
+/** Formats compiler errors with file context. */
+function formatCompilerErrors(filename, errors) {
+	return [`Failed to compile ${filename}.`, ...errors.map((error) => error instanceof Error ? error.message : String(error))].join("\n");
+}
+//#endregion
+//#region src/plugin/file.ts
+const vue_files = /* @__PURE__ */ new Map();
+/** Loads a cached Vue SFC or reads it from disk. */
+async function getVueFileData(filename, root) {
+	const cached = vue_files.get(filename);
+	if (cached) return cached;
+	return parseVueFile(filename, await fs.readFile(filename, "utf8"), root);
+}
+/** Parses and caches a Vue SFC. */
+function parseVueFile(filename, source, root) {
+	const parsed = parse(source, { filename });
+	if (parsed.errors.length > 0) throw new Error(formatCompilerErrors(filename, parsed.errors));
+	const data = {
+		descriptor: parsed.descriptor,
+		filename,
+		name_generic: createGenericName(filename, root),
+		scope_id: createScopeId(filename)
+	};
+	vue_files.set(filename, data);
+	return data;
+}
+//#endregion
+//#region src/plugin/script.ts
+/** Returns the language that must be stripped by OXC after SFC compilation. */
+function getScriptLang(descriptor) {
+	var _descriptor$scriptSet, _descriptor$script;
+	const lang = ((_descriptor$scriptSet = descriptor.scriptSetup) === null || _descriptor$scriptSet === void 0 ? void 0 : _descriptor$scriptSet.lang) ?? ((_descriptor$script = descriptor.script) === null || _descriptor$script === void 0 ? void 0 : _descriptor$script.lang);
+	if (lang === "jsx" || lang === "tsx" || lang === "ts") return lang;
+	return "js";
+}
+//#endregion
+//#region src/plugin/style.ts
+const STYLE_QUERY = "kit10-vue-style";
+const STYLE_REQUEST_RE = /^(?<filename>.+\.vue)\.__kit10_style_(?<index>\d+)__\.(?<lang>css|less|sass|scss|styl|stylus|pcss|postcss|sss)$/u;
+/** Returns whether a style language is processed by Vite's CSS pipeline. */
+function isCssLang(lang) {
+	return lang === "css" || lang === "less" || lang === "sass" || lang === "scss" || lang === "styl" || lang === "stylus" || lang === "pcss" || lang === "postcss" || lang === "sss";
+}
+/** Creates a virtual module id for a style block. */
+function createStyleRequest(filename, index, style) {
+	return `${filename}.__kit10_style_${index}__.${getStyleLang(style, filename)}?${STYLE_QUERY}&index=${index}&inline`;
+}
+/** Returns whether the id points to an SFC style virtual module. */
+function isStyleRequest(id) {
+	return id.includes(STYLE_QUERY);
+}
+/** Parses a virtual style module id. */
+function parseStyleRequest(id) {
+	if (!isStyleRequest(id)) return null;
+	const match = STYLE_REQUEST_RE.exec(cleanUrl(id));
+	if (!(match === null || match === void 0 ? void 0 : match.groups)) return null;
+	return {
+		filename: normalizePath(match.groups.filename),
+		index: Number.parseInt(match.groups.index, 10),
+		lang: match.groups.lang
+	};
+}
+/** Creates the local import binding name for a style block. */
+function createStyleImportName(index) {
+	return `__kit10_vue_style_${index}`;
+}
+/** Returns the Vite-supported CSS language for a style block. */
+function getStyleLang(style, filename) {
+	const lang = style.lang ?? "css";
+	if (isCssLang(lang)) return lang;
+	throw new Error(`Unsupported <style lang="${lang}"> in ${filename}. Vite can inline css, less, sass, scss, styl, stylus, pcss, postcss, and sss styles.`);
+}
+/** Loads the raw style content for Vite's CSS pipeline. */
+async function loadStyle(request, config) {
+	const style = (await getVueFileData(request.filename, config.root)).descriptor.styles[request.index];
+	if (!style) throw new Error(`Missing <style> block #${request.index} in ${request.filename}.`);
+	if (style.src) return `@import ${JSON.stringify(style.src)};`;
+	return style.content;
+}
+/** Compiles a loaded style virtual module after Vite CSS processing. */
+async function transformStyle(code, request, config) {
+	const file = await getVueFileData(request.filename, config.root);
+	const style = file.descriptor.styles[request.index];
+	if (!style) throw new Error(`Missing <style> block #${request.index} in ${request.filename}.`);
+	const compiled = compileStyle({
+		source: code,
+		filename: request.filename,
+		id: file.scope_id,
+		scoped: style.scoped,
+		isProd: config.isProduction
+	});
+	assertNoStyleErrors(request.filename, compiled.errors);
+	return {
+		code: compiled.code,
+		map: null
+	};
+}
+/** Throws when the Vue style compiler reports errors. */
+function assertNoStyleErrors(filename, errors) {
+	if (errors.length > 0) throw new Error(formatCompilerErrors(filename, errors));
+}
+//#endregion
 //#region src/plugin/main.ts
-/**
-* Generates a random string.
-* @returns -
-*/
-function randomString() {
-	return Math.random().toString(36).slice(2, 9);
+/** Returns whether the id points to a Vue SFC file. */
+function isVueRequest(id) {
+	return cleanUrl(id).endsWith(".vue");
+}
+/** Rewrites the compiled SFC default export to kit10 custom-element wiring. */
+function wrapCompiledScript(file, contents_script_ts, script_lang) {
+	const style_imports = file.descriptor.styles.map((style, index) => `import ${createStyleImportName(index)} from ${JSON.stringify(createStyleRequest(file.filename, index, style))};`);
+	const style_import_names = Array.from({ length: file.descriptor.styles.length }, (_unused, index) => createStyleImportName(index));
+	const has_styles = style_imports.length > 0;
+	const has_scoped_styles = file.descriptor.styles.some((style) => style.scoped);
+	const oxc = parseSync(script_lang === "jsx" || script_lang === "tsx" ? "anonymous.tsx" : "anonymous.ts", contents_script_ts);
+	const contents_result = [];
+	for (const node of oxc.program.body) {
+		if (node.type !== "ExportDefaultDeclaration") continue;
+		contents_result.push("import { VueCustomElement as _VueCustomElement, defineElement as _defineElement } from \"@kit10/vue/element\";", ...style_imports, contents_script_ts.slice(0, node.start), `const __sfc__ = ${contents_script_ts.slice(node.declaration.start, node.declaration.end)};`, contents_script_ts.slice(node.end), `__sfc__.name ??= ${JSON.stringify(file.name_generic)};`, ...has_styles && has_scoped_styles ? [`__sfc__.__scopeId = "data-v-${file.scope_id}";`] : [], ...has_styles ? [`const __css = [${style_import_names.join(", ")}].join("\\n");`] : [], "if (__sfc__.customElement === true) {", "	class _Element extends _VueCustomElement {", "		constructor() {", "			super(__sfc__);", "		}", "	}", `\t_defineElement(__sfc__.name, _Element${has_styles ? ", __css" : ""});`, "}", ...has_styles ? [
+			"else {",
+			"	const element = document.createElement(\"style\");",
+			"	element.dataset.element = __sfc__.name;",
+			"	element.textContent += __css;",
+			"	document.head.append(element);",
+			"}"
+		] : [], "export default __sfc__;");
+		break;
+	}
+	if (contents_result.length === 0) throw new Error(`No default export found in ${file.filename}.`);
+	return contents_result.join("\n");
+}
+/** Compiles a Vue SFC into the same custom-element wrapper used by old kit10. */
+async function transformVue(code, id, config) {
+	const file = parseVueFile(normalizePath(cleanUrl(id)), code, config.root);
+	const script_lang = getScriptLang(file.descriptor);
+	const contents_script_ts = compileScript(file.descriptor, {
+		id: file.scope_id,
+		inlineTemplate: true,
+		isProd: config.isProduction,
+		templateOptions: {
+			filename: file.filename,
+			id: file.scope_id,
+			compilerOptions: {
+				hoistStatic: true,
+				cacheHandlers: true,
+				isTS: script_lang === "ts" || script_lang === "tsx"
+			}
+		}
+	}).content;
+	const wrapped = wrapCompiledScript(file, contents_script_ts, script_lang);
+	if (script_lang === "js") return {
+		code: wrapped,
+		map: null
+	};
+	return {
+		code: (await transformWithOxc(wrapped, `${file.filename}.${script_lang}`, { lang: script_lang }, void 0, config)).code,
+		map: null
+	};
 }
 const vuePlugin = {
-	filter: /\.vue$/u,
-	async transform(artifact, options) {
-		artifact.meta.vue = true;
-		const id = randomString();
-		const name_generic = artifact.path.replace(/\.vue$/u, "").replaceAll("/", "-");
-		const sfc = parse(artifact.text());
-		const contents_script_ts = compileScript(sfc.descriptor, {
-			id,
-			inlineTemplate: true,
-			isProd: options.is_prod,
-			templateOptions: {
-				filename: artifact.path,
-				id,
-				compilerOptions: {
-					hoistStatic: true,
-					cacheHandlers: true,
-					isTS: true
-				}
-			}
-		}).content;
-		const has_styles = sfc.descriptor.styles.length > 0;
-		let has_scoped_styles = false;
-		const cssArtifacts = /* @__PURE__ */ new Set();
-		const promises = [];
-		for (const style of sfc.descriptor.styles) {
-			if (style.scoped) has_scoped_styles = true;
-			const cssArtifact = artifact.create(style.content, { ext: style.lang ?? "css" });
-			cssArtifact.meta.scoped = style.scoped;
-			cssArtifacts.add(cssArtifact);
-			promises.push(cssArtifact.process());
-		}
-		await Promise.all(promises);
-		let css = "";
-		for (const cssArtifact of cssArtifacts) {
-			css += compileStyle({
-				source: cssArtifact.text(),
-				filename: artifact.path,
-				id: artifact.id,
-				scoped: cssArtifact.meta.scoped === true
-			}).code;
-			cssArtifact.delete();
-		}
-		const oxc = parseSync("anonymous.ts", contents_script_ts);
-		const contents_result = [];
-		for (const node of oxc.program.body) if (node.type === "ExportDefaultDeclaration") {
-			contents_result.push("import { VueCustomElement as _VueCustomElement, defineElement as _defineElement } from \"@kit10/vue/element\";", contents_script_ts.slice(0, node.start), `const __sfc__ = ${contents_script_ts.slice(node.declaration.start, node.declaration.end)};`, contents_script_ts.slice(node.end), `__sfc__.name ??= ${JSON.stringify(name_generic)};`, ...has_styles && has_scoped_styles ? [`__sfc__.__scopeId = "data-v-${id}";`] : [], ...has_styles ? [`const __css = ${JSON.stringify(css)};`] : [], "if (__sfc__.customElement === true) {", "	class _Element extends _VueCustomElement {", "		constructor() {", "			super(__sfc__);", "		}", "	}", `\t_defineElement(__sfc__.name, _Element${has_styles ? `, __css` : ""});`, "}", ...has_styles ? [
-				"else {",
-				"	const element = document.createElement(\"style\");",
-				`\telement.dataset.element = __sfc__.name;`,
-				`\telement.textContent += __css;`,
-				"	document.head.append(element);",
-				"}"
-			] : [], "export default __sfc__;");
-			break;
-		}
-		if (contents_result.length === 0) throw new Error("No default export found in Vue script.");
-		artifact.updateExt("ts");
-		artifact.update(contents_result.join("\n"));
+	name: "kit10:vue",
+	config() {
+		return { css: { transformer: "lightningcss" } };
+	},
+	configResolved(config) {
+		vue_files.clear();
+		resolved_config = config;
+	},
+	resolveId(id) {
+		if (parseStyleRequest(id)) return id;
+	},
+	async load(id) {
+		const style_request = parseStyleRequest(id);
+		if (!style_request || !resolved_config) return;
+		this.addWatchFile(style_request.filename);
+		return await loadStyle(style_request, resolved_config);
+	},
+	async transform(code, id) {
+		if (!resolved_config) return;
+		const style_request = parseStyleRequest(id);
+		if (style_request) return await transformStyle(code, style_request, resolved_config);
+		if (!isVueRequest(id)) return;
+		return await transformVue(code, id, resolved_config);
+	},
+	handleHotUpdate(context) {
+		vue_files.delete(normalizePath(context.file));
 	}
 };
+let resolved_config = null;
 //#endregion
 export { vuePlugin };
