@@ -1,8 +1,8 @@
 import type { ResolvedConfig, Plugin as VitePlugin } from 'vite';
-import { vue_files } from './file.js';
-import { transformVue } from './sfc.js';
-import { loadStyle, parseStyleRequest, transformStyle } from './style.js';
-import { isVueRequest, normalizePath } from './utils.js';
+import { vue_files } from './vite/file.js';
+import { transformVue } from './vite/sfc.js';
+import { loadStyle, parseStyleRequest, transformStyle } from './vite/style.js';
+import { isVueRequest, normalizePath } from './vite/utils.js';
 
 let resolved_config: ResolvedConfig | null = null;
 

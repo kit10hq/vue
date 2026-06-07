@@ -1,10 +1,7 @@
 import fs from 'node:fs/promises';
 import { parse, type SFCDescriptor } from '@vue/compiler-sfc';
-import {
-	createGenericName,
-	createScopeId,
-	formatCompilerErrors,
-} from './utils.js';
+import { formatCompilerErrors } from '../utils.js';
+import { createGenericName, createScopeId } from './utils.js';
 
 export type VueFileData = {
 	descriptor: SFCDescriptor;

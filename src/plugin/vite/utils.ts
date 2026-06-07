@@ -27,19 +27,6 @@ export function createGenericName(filename: string, root: string): string {
 		.replaceAll('/', '-');
 }
 
-/** Formats compiler errors with file context. */
-export function formatCompilerErrors(
-	filename: string,
-	errors: unknown[],
-): string {
-	return [
-		`Failed to compile ${filename}.`,
-		...errors.map((error) =>
-			error instanceof Error ? error.message : String(error),
-		),
-	].join('\n');
-}
-
 /** Returns whether the id points to a Vue SFC file. */
 export function isVueRequest(id: string): boolean {
 	return cleanUrl(id).endsWith('.vue');

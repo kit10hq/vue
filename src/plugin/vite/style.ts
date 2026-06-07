@@ -1,7 +1,8 @@
 import { compileStyle, type SFCStyleBlock } from '@vue/compiler-sfc';
 import type { ResolvedConfig, TransformResult } from 'vite';
+import { formatCompilerErrors } from '../utils.js';
 import { getVueFileData } from './file.js';
-import { cleanUrl, formatCompilerErrors, normalizePath } from './utils.js';
+import { cleanUrl, normalizePath } from './utils.js';
 
 type StyleRequest = {
 	filename: string;

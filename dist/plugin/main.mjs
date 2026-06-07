@@ -1,9 +1,94 @@
 import fs from "node:fs/promises";
-import { compileScript, compileStyle, parse } from "@vue/compiler-sfc";
-import crypto from "node:crypto";
 import nodePath from "node:path";
+import { compileScript, compileStyle, parse } from "@vue/compiler-sfc";
 import { parseSync } from "oxc-parser";
+import crypto from "node:crypto";
 import { transformWithOxc } from "vite";
+//#region src/plugin/utils.ts
+/** Returns whether the value is an object record. */
+function isRecord(value) {
+	return typeof value === "object" && value !== null;
+}
+/** Formats compiler errors with file context. */
+function formatCompilerErrors(filename, errors) {
+	return [`Failed to compile ${filename}.`, ...errors.map((error) => error instanceof Error ? error.message : String(error))].join("\n");
+}
+//#endregion
+//#region src/plugin/vite/script.ts
+/** Returns the language that must be stripped by OXC after SFC compilation. */
+function getScriptLang(descriptor) {
+	var _descriptor$scriptSet, _descriptor$script;
+	const lang = ((_descriptor$scriptSet = descriptor.scriptSetup) === null || _descriptor$scriptSet === void 0 ? void 0 : _descriptor$scriptSet.lang) ?? ((_descriptor$script = descriptor.script) === null || _descriptor$script === void 0 ? void 0 : _descriptor$script.lang);
+	if (lang === "jsx" || lang === "tsx" || lang === "ts") return lang;
+	return "js";
+}
+//#endregion
+//#region src/plugin/kit10.ts
+/** Returns a safe value for an HTML attribute. */
+function escapeAttribute(value) {
+	return value.replaceAll("&", "&amp;").replaceAll("\"", "&quot;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+}
+/** Extracts <kit10:head> contents from Vue custom blocks. */
+function getKit10Head(descriptor) {
+	return descriptor.customBlocks.filter((block) => block.type === "kit10:head").map((block) => block.content.trim()).filter((content) => content.length > 0).join("\n");
+}
+/** Returns the object passed to defineComponent(), or the expression itself. */
+function getComponentOptionsExpression(expression) {
+	if (!isRecord(expression) || expression.type !== "CallExpression") return expression;
+	const args = expression.arguments;
+	if (!Array.isArray(args)) return expression;
+	return args[0] ?? expression;
+}
+/** Returns whether an object property key is the customElement key. */
+function isCustomElementKey(key) {
+	if (!isRecord(key)) return false;
+	if (key.type === "Identifier") return key.name === "customElement";
+	return key.type === "Literal" && key.value === "customElement";
+}
+/** Reads customElement from a component options object. */
+function readCustomElementFromOptions(options, filename) {
+	if (!isRecord(options) || options.type !== "ObjectExpression") return null;
+	const { properties } = options;
+	if (!Array.isArray(properties)) return null;
+	for (let index = properties.length - 1; index >= 0; index--) {
+		const property = properties[index];
+		if (!isRecord(property)) continue;
+		if (property.type === "SpreadElement") {
+			const custom_element = readCustomElementFromOptions(property.argument, filename);
+			if (custom_element !== null) return custom_element;
+			continue;
+		}
+		if (property.type !== "Property" || !isCustomElementKey(property.key)) continue;
+		const { value } = property;
+		if (isRecord(value) && value.type === "Literal" && typeof value.value === "string") return value.value;
+		throw new Error(`Vue page "${filename}" must use a static string customElement option.`);
+	}
+	return null;
+}
+/** Extracts customElement from compiled SFC options. */
+function getCustomElementName(descriptor, filename) {
+	const script_lang = getScriptLang(descriptor);
+	const script = compileScript(descriptor, { id: "kit10-vue-page" }).content;
+	const ast = parseSync(script_lang === "jsx" || script_lang === "tsx" ? "anonymous.tsx" : "anonymous.ts", script);
+	for (const node of ast.program.body) {
+		if (node.type !== "ExportDefaultDeclaration") continue;
+		const custom_element = readCustomElementFromOptions(getComponentOptionsExpression(node.declaration), filename);
+		if (custom_element !== null) return custom_element;
+	}
+	throw new Error(`Vue page "${filename}" must define a static customElement option.`);
+}
+/** Compiles a Vue page SFC into a Kit10 HTML fragment. */
+async function transformVuePage(filename) {
+	const parsed = parse(await fs.readFile(filename, "utf8"), { filename });
+	if (parsed.errors.length > 0) throw new Error(formatCompilerErrors(filename, parsed.errors));
+	const { descriptor } = parsed;
+	const custom_element = getCustomElementName(descriptor, filename);
+	const kit10_head = getKit10Head(descriptor);
+	const component_html = `<${custom_element}><script type="module" src="${escapeAttribute(`./${nodePath.basename(filename)}`)}"><\/script></${custom_element}>`;
+	if (kit10_head.length === 0) return component_html;
+	return `<kit10:head>\n${kit10_head}\n</kit10:head>\n${component_html}`;
+}
+//#endregion
 //#region src/plugin/vite/utils.ts
 /** Returns the path without query/hash parts. */
 function cleanUrl(id) {
@@ -20,10 +105,6 @@ function createScopeId(filename) {
 /** Creates the fallback component/custom-element name. */
 function createGenericName(filename, root) {
 	return normalizePath(nodePath.relative(root, filename)).replace(/\.vue$/u, "").replaceAll("/", "-");
-}
-/** Formats compiler errors with file context. */
-function formatCompilerErrors(filename, errors) {
-	return [`Failed to compile ${filename}.`, ...errors.map((error) => error instanceof Error ? error.message : String(error))].join("\n");
 }
 /** Returns whether the id points to a Vue SFC file. */
 function isVueRequest(id) {
@@ -50,15 +131,6 @@ function parseVueFile(filename, source, root) {
 	};
 	vue_files.set(filename, data);
 	return data;
-}
-//#endregion
-//#region src/plugin/vite/script.ts
-/** Returns the language that must be stripped by OXC after SFC compilation. */
-function getScriptLang(descriptor) {
-	var _descriptor$scriptSet, _descriptor$script;
-	const lang = ((_descriptor$scriptSet = descriptor.scriptSetup) === null || _descriptor$scriptSet === void 0 ? void 0 : _descriptor$scriptSet.lang) ?? ((_descriptor$script = descriptor.script) === null || _descriptor$script === void 0 ? void 0 : _descriptor$script.lang);
-	if (lang === "jsx" || lang === "tsx" || lang === "ts") return lang;
-	return "js";
 }
 //#endregion
 //#region src/plugin/vite/style.ts
@@ -176,12 +248,16 @@ async function transformVue(code, id, config) {
 	};
 }
 //#endregion
-//#region src/plugin/vite/main.ts
+//#region src/plugin/vite.ts
 let resolved_config = null;
 //#endregion
 //#region src/plugin/main.ts
 const vuePlugin = {
 	kit10: true,
+	htmlPreprocessor: {
+		filter: /\.vue/u,
+		transform: transformVuePage
+	},
 	vitePlugins: [{
 		name: "kit10:vue",
 		config() {

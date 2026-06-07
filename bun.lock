@@ -11,7 +11,7 @@
       "devDependencies": {
         "@biomejs/biome": "2.4.10",
         "@kirick/lint": "0.3.1",
-        "@kit10/vite": "file:../vite/pack-1780825447959.tar.gz",
+        "@kit10/vite": "file:../vite/pack-1780825984411.tar.gz",
         "@types/node": "22.15.13",
         "eslint": "10.2.0",
         "oxlint": "1.58.0",
@@ -104,7 +104,7 @@
 
     "@kirick/lint": ["@kirick/lint@0.3.1", "", { "dependencies": { "@stylistic/eslint-plugin": "5.10.0", "eslint": "10.2.0", "eslint-plugin-jsdoc": "62.9.0", "eslint-plugin-n": "17.24.0", "eslint-plugin-promise": "7.2.1", "eslint-plugin-unicorn": "64.0.0", "eslint-plugin-vue": "10.8.0", "typescript-eslint": "8.58.0" }, "bin": { "lint": "dist/main.mjs" } }, "sha512-NoH3VVby7x/mtHtSoA18ECJVtYcmm8P8d5PHUsxq9gXzxiiaQJa2FrTKVODyHlc3gaWc5wBdZgCKtKrDEL0LZg=="],
 
-    "@kit10/vite": ["@kit10/vite@../vite/pack-1780825447959.tar.gz", { "dependencies": { "@minify-html/node": "0.18.1", "hono": "4.12.23", "html-rewriter-wasm": "0.4.1", "vite": "8.0.16" }, "optionalDependencies": { "@hono/node-server": "2.0.4" }, "bin": "./dist/main.mjs" }, "sha512-23qRfCh/LRHrzEzbx5wXHWDRNdElZCoVPtOFzXQ4EuOTcHQjOaGihCzU0dW/SZrm0mfKioSnJX794nsdZl3rng=="],
+    "@kit10/vite": ["@kit10/vite@../vite/pack-1780825984411.tar.gz", { "dependencies": { "@minify-html/node": "0.18.1", "hono": "4.12.23", "html-rewriter-wasm": "0.4.1", "vite": "8.0.16" }, "optionalDependencies": { "@hono/node-server": "2.0.4" }, "bin": "./dist/main.mjs" }, "sha512-g7dmBwg8VP477eLiZDcTtp7Q5PB0PfBo+9D/nRD46Pt/SxAMTWfBCKQa/3J19492tgmVqIGoy3su1YeaJnuqbA=="],
 
     "@minify-html/node": ["@minify-html/node@0.18.1", "", { "optionalDependencies": { "@minify-html/node-darwin-arm64": "0.18.1", "@minify-html/node-darwin-x64": "0.18.1", "@minify-html/node-linux-arm64": "0.18.1", "@minify-html/node-linux-x64": "0.18.1", "@minify-html/node-win32-x64": "0.18.1" }, "bin": { "minify-html": "cli.js" } }, "sha512-pNOv6z9zUDrjTU1+VcPOnDzGeaaqd6m9kbyHU+sg9O35450uzfke8ahx8gKlFdp/kQFrRn2rFIGAoANUZ62nSw=="],
 
