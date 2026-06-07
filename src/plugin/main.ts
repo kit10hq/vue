@@ -56,41 +56,41 @@ function wrapCompiledScript(
 			continue;
 		}
 
+		const import_name = `element_${file.scope_id}`;
+		const sfc_name = `sfc_${file.scope_id}`;
+		const css_name = `css_${file.scope_id}`;
+
 		contents_result.push(
-			'import { VueCustomElement as _VueCustomElement, defineElement as _defineElement } from "@kit10/vue/element";',
+			`import * as ${import_name} from "@kit10/vue/element";`,
 			...style_imports,
 			contents_script_ts.slice(0, node.start),
-			`const __sfc__ = ${contents_script_ts.slice(
+			`const ${sfc_name} = ${contents_script_ts.slice(
 				node.declaration.start,
 				node.declaration.end,
 			)};`,
 			contents_script_ts.slice(node.end),
-			`__sfc__.name ??= ${JSON.stringify(file.name_generic)};`,
+			`${sfc_name}.__name = ${JSON.stringify(file.name_generic)};`,
 			...(has_styles && has_scoped_styles
-				? [`__sfc__.__scopeId = "data-v-${file.scope_id}";`]
+				? [`${sfc_name}.__scopeId = "data-v-${file.scope_id}";`]
 				: []),
-			...(has_styles
-				? [`const __css = [${style_import_names.join(', ')}].join("\\n");`]
-				: []),
-			'if (__sfc__.customElement === true) {',
-			'\tclass _Element extends _VueCustomElement {',
-			'\t\tconstructor() {',
-			'\t\t\tsuper(__sfc__);',
-			'\t\t}',
-			'\t}',
-			`\t_defineElement(__sfc__.name, _Element${has_styles ? ', __css' : ''});`,
-			'}',
 			...(has_styles
 				? [
-						'else {',
-						'\tconst element = document.createElement("style");',
-						'\telement.dataset.element = __sfc__.name;',
-						'\telement.textContent += __css;',
-						'\tdocument.head.append(element);',
-						'}',
+						`const ${css_name} = [${style_import_names.join(', ')}].join("\\n");`,
 					]
 				: []),
-			'export default __sfc__;',
+			`if (${sfc_name}.customElement === undefined) {`,
+			...(has_styles
+				? [`\t${import_name}.addStyles(${sfc_name}.__name, ${css_name});`]
+				: []),
+			'} else {',
+			`\tclass _Element extends ${import_name}.VueCustomElement {`,
+			'\t\tconstructor() {',
+			`\t\t\tsuper(${sfc_name});`,
+			'\t\t}',
+			'\t}',
+			`\t${import_name}.defineElement(${sfc_name}.customElement, _Element${has_styles ? `, ${css_name}` : ''});`,
+			'}',
+			`export default ${sfc_name};`,
 		);
 
 		break;

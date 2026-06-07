@@ -76,14 +76,31 @@ export function defineElement(
 	VueCustomElementClass: typeof VueCustomElement,
 	css?: string,
 ): void {
+	addStyles(tag_name, css, true);
+
+	globalThis.customElements.define(tag_name, VueCustomElementClass);
+}
+
+/**
+ * Adds CSS styles for a custom element.
+ * @param name Custom element tag name.
+ * @param css CSS code.
+ * @param is_custom_element Custom element tag name to use in the selector.
+ */
+export function addStyles(
+	name: string,
+	css: string | undefined,
+	is_custom_element = false,
+): void {
 	const element = document.createElement('style');
-	element.dataset.element = tag_name;
-	element.textContent = `${tag_name}{display:contents;}`;
+	element.dataset.element = name;
+	if (is_custom_element) {
+		element.textContent = `${name}{display:contents;}`;
+	}
+
 	if (typeof css === 'string') {
 		element.textContent += `\n${css}`;
 	}
 
 	document.head.append(element);
-
-	globalThis.customElements.define(tag_name, VueCustomElementClass);
 }
