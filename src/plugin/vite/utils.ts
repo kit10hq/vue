@@ -39,3 +39,8 @@ export function formatCompilerErrors(
 		),
 	].join('\n');
 }
+
+/** Returns whether the id points to a Vue SFC file. */
+export function isVueRequest(id: string): boolean {
+	return cleanUrl(id).endsWith('.vue');
+}

@@ -1,10 +1,10 @@
-import { compileScript, compileStyle, parse } from "@vue/compiler-sfc";
-import { parseSync } from "oxc-parser";
-import { transformWithOxc } from "vite";
 import fs from "node:fs/promises";
+import { compileScript, compileStyle, parse } from "@vue/compiler-sfc";
 import crypto from "node:crypto";
 import nodePath from "node:path";
-//#region src/plugin/utils.ts
+import { parseSync } from "oxc-parser";
+import { transformWithOxc } from "vite";
+//#region src/plugin/vite/utils.ts
 /** Returns the path without query/hash parts. */
 function cleanUrl(id) {
 	return id.replace(/[?#].*$/u, "");
@@ -25,8 +25,12 @@ function createGenericName(filename, root) {
 function formatCompilerErrors(filename, errors) {
 	return [`Failed to compile ${filename}.`, ...errors.map((error) => error instanceof Error ? error.message : String(error))].join("\n");
 }
+/** Returns whether the id points to a Vue SFC file. */
+function isVueRequest(id) {
+	return cleanUrl(id).endsWith(".vue");
+}
 //#endregion
-//#region src/plugin/file.ts
+//#region src/plugin/vite/file.ts
 const vue_files = /* @__PURE__ */ new Map();
 /** Loads a cached Vue SFC or reads it from disk. */
 async function getVueFileData(filename, root) {
@@ -48,7 +52,7 @@ function parseVueFile(filename, source, root) {
 	return data;
 }
 //#endregion
-//#region src/plugin/script.ts
+//#region src/plugin/vite/script.ts
 /** Returns the language that must be stripped by OXC after SFC compilation. */
 function getScriptLang(descriptor) {
 	var _descriptor$scriptSet, _descriptor$script;
@@ -57,7 +61,7 @@ function getScriptLang(descriptor) {
 	return "js";
 }
 //#endregion
-//#region src/plugin/style.ts
+//#region src/plugin/vite/style.ts
 const STYLE_QUERY = "kit10-vue-style";
 const STYLE_REQUEST_RE = /^(?<filename>.+\.vue)\.__kit10_style_(?<index>\d+)__\.(?<lang>css|less|sass|scss|styl|stylus|pcss|postcss|sss)$/u;
 /** Returns whether a style language is processed by Vite's CSS pipeline. */
@@ -123,11 +127,7 @@ function assertNoStyleErrors(filename, errors) {
 	if (errors.length > 0) throw new Error(formatCompilerErrors(filename, errors));
 }
 //#endregion
-//#region src/plugin/main.ts
-/** Returns whether the id points to a Vue SFC file. */
-function isVueRequest(id) {
-	return cleanUrl(id).endsWith(".vue");
-}
+//#region src/plugin/vite/sfc.ts
 /** Rewrites the compiled SFC default export to kit10 custom-element wiring. */
 function wrapCompiledScript(file, contents_script_ts, script_lang) {
 	const style_imports = file.descriptor.styles.map((style, index) => `import ${createStyleImportName(index)} from ${JSON.stringify(createStyleRequest(file.filename, index, style))};`);
@@ -175,35 +175,42 @@ async function transformVue(code, id, config) {
 		map: null
 	};
 }
-const vuePlugin = {
-	name: "kit10:vue",
-	config() {
-		return { css: { transformer: "lightningcss" } };
-	},
-	configResolved(config) {
-		vue_files.clear();
-		resolved_config = config;
-	},
-	resolveId(id) {
-		if (parseStyleRequest(id)) return id;
-	},
-	async load(id) {
-		const style_request = parseStyleRequest(id);
-		if (!style_request || !resolved_config) return;
-		this.addWatchFile(style_request.filename);
-		return await loadStyle(style_request, resolved_config);
-	},
-	async transform(code, id) {
-		if (!resolved_config) return;
-		const style_request = parseStyleRequest(id);
-		if (style_request) return await transformStyle(code, style_request, resolved_config);
-		if (!isVueRequest(id)) return;
-		return await transformVue(code, id, resolved_config);
-	},
-	handleHotUpdate(context) {
-		vue_files.delete(normalizePath(context.file));
-	}
-};
+//#endregion
+//#region src/plugin/vite/main.ts
 let resolved_config = null;
+//#endregion
+//#region src/plugin/main.ts
+const vuePlugin = {
+	kit10: true,
+	vitePlugins: [{
+		name: "kit10:vue",
+		config() {
+			return { css: { transformer: "lightningcss" } };
+		},
+		configResolved(config) {
+			vue_files.clear();
+			resolved_config = config;
+		},
+		resolveId(id) {
+			if (parseStyleRequest(id)) return id;
+		},
+		async load(id) {
+			const style_request = parseStyleRequest(id);
+			if (!style_request || !resolved_config) return;
+			this.addWatchFile(style_request.filename);
+			return await loadStyle(style_request, resolved_config);
+		},
+		async transform(code, id) {
+			if (!resolved_config) return;
+			const style_request = parseStyleRequest(id);
+			if (style_request) return await transformStyle(code, style_request, resolved_config);
+			if (!isVueRequest(id)) return;
+			return await transformVue(code, id, resolved_config);
+		},
+		handleHotUpdate(context) {
+			vue_files.delete(normalizePath(context.file));
+		}
+	}]
+};
 //#endregion
 export { vuePlugin };

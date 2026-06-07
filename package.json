@@ -28,6 +28,7 @@
 		"vue": "3.5.27"
 	},
 	"devDependencies": {
+		"@kit10/vite": "file:../vite/pack-1780825447959.tar.gz",
 		"@biomejs/biome": "2.4.10",
 		"@kirick/lint": "0.3.1",
 		"@types/node": "22.15.13",
