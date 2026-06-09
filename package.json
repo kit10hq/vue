@@ -24,7 +24,7 @@
 		"oxc-parser": "0.133.0"
 	},
 	"peerDependencies": {
-		"kit10": "file:../kit10/pack-1781013143544.tar.gz",
+		"kit10": "github:kit10hq/kit10#cf3384aa913b244b992c4d62ac29eeb02e506f2d",
 		"vite": "^8.0",
 		"vue": "3.5.35"
 	},
@@ -43,6 +43,8 @@
 		"kit10": "../kit10"
 	},
 	"scripts": {
+		"4git": "dev pack update --git && bun i && bun check",
+		"4local": "dev pack update --local && bun i && bun run pack",
 		"build": "tsdown src/plugin/main.ts src/element/main.ts --unused --dts --format esm",
 		"check": "bun run lint && bun run build && bun run test",
 		"lint": "biome format && oxlint && eslint . && tsc && (cd src/element && tsc)",
