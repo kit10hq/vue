@@ -1,4 +1,4 @@
-import type { Kit10Plugin } from '@kit10/vite';
+import type { Kit10Plugin } from 'kit10';
 import { transformVuePage } from './kit10.js';
 import { vueVitePlugin } from './vite.js';
 

@@ -17,8 +17,7 @@ function formatCompilerErrors(filename, errors) {
 //#region src/plugin/vite/script.ts
 /** Returns the language that must be stripped by OXC after SFC compilation. */
 function getScriptLang(descriptor) {
-	var _descriptor$scriptSet, _descriptor$script;
-	const lang = ((_descriptor$scriptSet = descriptor.scriptSetup) === null || _descriptor$scriptSet === void 0 ? void 0 : _descriptor$scriptSet.lang) ?? ((_descriptor$script = descriptor.script) === null || _descriptor$script === void 0 ? void 0 : _descriptor$script.lang);
+	const lang = descriptor.scriptSetup?.lang ?? descriptor.script?.lang;
 	if (lang === "jsx" || lang === "tsx" || lang === "ts") return lang;
 	return "js";
 }
@@ -152,7 +151,7 @@ function isStyleRequest(id) {
 function parseStyleRequest(id) {
 	if (!isStyleRequest(id)) return null;
 	const match = STYLE_REQUEST_RE.exec(cleanUrl(id));
-	if (!(match === null || match === void 0 ? void 0 : match.groups)) return null;
+	if (!match?.groups) return null;
 	return {
 		filename: normalizePath(match.groups.filename),
 		index: Number.parseInt(match.groups.index, 10),

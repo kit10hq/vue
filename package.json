@@ -17,28 +17,30 @@
 		}
 	},
 	"engines": {
-		"node": ">=16"
+		"node": ">=22.16"
 	},
 	"dependencies": {
 		"@vue/compiler-sfc": "3.5.35",
 		"oxc-parser": "0.133.0"
 	},
 	"peerDependencies": {
-		"vite": "8.0.16",
-		"vue": "3.5.27"
+		"kit10": "file:../kit10/pack-1781013143544.tar.gz",
+		"vite": "^8.0",
+		"vue": "3.5.35"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.10",
 		"@kirick/lint": "0.3.1",
-		"@kit10/vite": "file:../vite/pack-1780825984411.tar.gz",
 		"@types/node": "22.15.13",
 		"eslint": "10.2.0",
 		"oxlint": "1.58.0",
 		"publint": "0.3.21",
 		"tsdown": "0.22.0",
 		"typescript": "6.0.2",
-		"unplugin-unused": "0.5.7",
-		"vite": "8.0.16"
+		"unplugin-unused": "0.5.7"
+	},
+	"_devpack": {
+		"kit10": "../kit10"
 	},
 	"scripts": {
 		"build": "tsdown src/plugin/main.ts src/element/main.ts --unused --dts --format esm",
@@ -51,7 +53,12 @@
 		"type": "git",
 		"url": "git+https://github.com/kit10hq/vue.git"
 	},
-	"keywords": [],
+	"keywords": [
+		"kit10",
+		"vite",
+		"vue",
+		"vuejs"
+	],
 	"author": "Daniil Kirichenko (https://twitter.com/kirickme)",
 	"license": "MIT",
 	"bugs": {
