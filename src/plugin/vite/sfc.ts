@@ -44,41 +44,39 @@ export function wrapCompiledScript(
 			continue;
 		}
 
-		const import_name = `element_${file.scope_id}`;
-		const sfc_name = `sfc_${file.scope_id}`;
-		const css_name = `css_${file.scope_id}`;
+		const import_var = `element_${file.scope_id}`;
+		const sfc_var = `sfc_${file.scope_id}`;
+		const css_var = `css_${file.scope_id}`;
 
 		contents_result.push(
-			`import * as ${import_name} from "@kit10/vue/element";`,
+			`import * as ${import_var} from "@kit10/vue/element";`,
 			...style_imports,
 			contents_script_ts.slice(0, node.start),
-			`const ${sfc_name} = ${contents_script_ts.slice(
+			`const ${sfc_var} = ${contents_script_ts.slice(
 				node.declaration.start,
 				node.declaration.end,
 			)};`,
 			contents_script_ts.slice(node.end),
-			`${sfc_name}.__name = ${JSON.stringify(file.name_generic)};`,
+			`${sfc_var}.__name = ${JSON.stringify(file.name_generic)};`,
 			...(has_styles && has_scoped_styles
-				? [`${sfc_name}.__scopeId = "data-v-${file.scope_id}";`]
+				? [`${sfc_var}.__scopeId = "data-v-${file.scope_id}";`]
 				: []),
 			...(has_styles
-				? [
-						`const ${css_name} = [${style_import_names.join(', ')}].join("\\n");`,
-					]
+				? [`const ${css_var} = [${style_import_names.join(', ')}].join("\\n");`]
 				: []),
-			`if (${sfc_name}.customElement === undefined) {`,
-			...(has_styles
-				? [`\t${import_name}.addStyles(${sfc_name}.__name, ${css_name});`]
-				: []),
-			'} else {',
-			`\tclass _Element extends ${import_name}.VueCustomElement {`,
+			`if (${sfc_var}.customElement) {`,
+			`\tclass _Element extends ${import_var}.VueCustomElement {`,
 			'\t\tconstructor() {',
-			`\t\t\tsuper(${sfc_name});`,
+			`\t\t\tsuper(${sfc_var});`,
 			'\t\t}',
 			'\t}',
-			`\t${import_name}.defineElement(${sfc_name}.customElement, _Element${has_styles ? `, ${css_name}` : ''});`,
+			`\t${import_var}.defineElement(${sfc_var}.customElement, _Element${has_styles ? `, ${css_var}` : ''});`,
+			'} else {',
+			...(has_styles
+				? [`\t${import_var}.addStyles(${sfc_var}.__name, ${css_var});`]
+				: []),
 			'}',
-			`export default ${sfc_name};`,
+			`export default ${sfc_var};`,
 		);
 
 		break;

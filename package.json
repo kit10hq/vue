@@ -46,10 +46,9 @@
 		"4git": "dev pack update --git && bun i && bun check",
 		"4local": "dev pack update --local && bun i && bun run pack",
 		"build": "tsdown src/plugin/main.ts src/element/main.ts --unused --dts --format esm",
-		"check": "bun run lint && bun run build && bun run test",
+		"check": "bun run lint && bun run build",
 		"lint": "biome format && oxlint && eslint . && tsc && (cd src/element && tsc)",
-		"pack": "bun run check && dev pack create",
-		"test": "echo 'No tests specified'"
+		"pack": "bun run check && dev pack create"
 	},
 	"repository": {
 		"type": "git",
