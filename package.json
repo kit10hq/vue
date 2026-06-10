@@ -24,8 +24,8 @@
 		"oxc-parser": "0.133.0"
 	},
 	"peerDependencies": {
-		"kit10": "file:../kit10/pack-1780585736642.tar.gz",
-		"vue": "3.5.27"
+		"kit10": "file:../kit10/pack-1781084647069.tar.gz",
+		"vue": "3.5.35"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.4.10",
@@ -38,12 +38,16 @@
 		"typescript": "6.0.2",
 		"unplugin-unused": "0.5.7"
 	},
+	"_devpack": {
+		"kit10": "../kit10"
+	},
 	"scripts": {
+		"4git": "dev pack update --git && bun install && bun check",
+		"4local": "dev pack update --local && bun install && bun run pack",
 		"build": "tsdown src/plugin/main.ts src/element/main.ts --unused --dts --format esm",
-		"check": "bun run lint && bun run build && bun run test",
+		"check": "bun run lint && bun run build",
 		"lint": "biome format && oxlint && eslint . && tsc && (cd src/element && tsc)",
-		"pack": "bun run check && dev pack create",
-		"test": "echo 'No tests specified'"
+		"pack": "bun run check && dev pack create"
 	},
 	"repository": {
 		"type": "git",

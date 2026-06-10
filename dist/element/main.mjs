@@ -41,12 +41,21 @@ var VueCustomElement = class extends HTMLElement {
 * @param [css] CSS code.
 */
 function defineElement(tag_name, VueCustomElementClass, css) {
-	const element = document.createElement("style");
-	element.dataset.element = tag_name;
-	element.textContent = `${tag_name}{display:contents;}`;
-	if (typeof css === "string") element.textContent += `\n${css}`;
-	document.head.append(element);
+	addStyles(tag_name, css, true);
 	globalThis.customElements.define(tag_name, VueCustomElementClass);
 }
+/**
+* Adds CSS styles for a custom element.
+* @param name Custom element tag name.
+* @param css CSS code.
+* @param is_custom_element Custom element tag name to use in the selector.
+*/
+function addStyles(name, css, is_custom_element = false) {
+	const element = document.createElement("style");
+	element.dataset.element = name;
+	if (is_custom_element) element.textContent = `${name}{display:contents;}`;
+	if (typeof css === "string") element.textContent += `\n${css}`;
+	document.head.append(element);
+}
 //#endregion
-export { VueCustomElement, defineElement };
+export { VueCustomElement, addStyles, defineElement };

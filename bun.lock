@@ -20,8 +20,8 @@
         "unplugin-unused": "0.5.7",
       },
       "peerDependencies": {
-        "kit10": "file:../kit10/pack-1780585736642.tar.gz",
-        "vue": "3.5.27",
+        "kit10": "file:../kit10/pack-1781084647069.tar.gz",
+        "vue": "3.5.35",
       },
     },
   },
@@ -129,8 +129,6 @@
     "@eslint/object-schema": ["@eslint/object-schema@3.0.5", "", {}, "sha512-vqTaUEgxzm+YDSdElad6PiRoX4t8VGDjCtt05zn4nU810UIx/uNEV7/lZJ6KwFThKZOzOxzXy48da+No7HZaMw=="],
 
     "@eslint/plugin-kit": ["@eslint/plugin-kit@0.7.2", "", { "dependencies": { "@eslint/core": "^1.2.1", "levn": "^0.4.1" } }, "sha512-+CNAzxglkrpNf/kKywqQfk74QjtceuOE7Qm+AF8miRvPF/wmmK5+OJOgVh3AVTT3RP2mH3+FOaxlE5v72owk0A=="],
-
-    "@hono/node-server": ["@hono/node-server@2.0.4", "", { "peerDependencies": { "hono": "^4" } }, "sha512-Ut3y0dMMPWy6bZ2kVfx25EOVbZlm15dhF4mOsezMlhpNHy+4MkU1qN9Y6lnruYi4wPmFzimGX2X7LF/FwHli4A=="],
 
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 
@@ -468,8 +466,6 @@
 
     "graceful-fs": ["graceful-fs@4.2.11", "", {}, "sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ=="],
 
-    "hono": ["hono@4.12.23", "", {}, "sha512-eIaZ9qDgu7XV0pxOCrg7/WhnQ6Ivm22UcxhXx/A3dcbqbbYgBEkc6e/J/s7j2tS96zoB0S9VBdLwQNCWwUo4LA=="],
-
     "hookable": ["hookable@6.1.1", "", {}, "sha512-U9LYDy1CwhMCnprUfeAZWZGByVbhd54hwepegYTK7Pi5NvqEj63ifz5z+xukznehT7i6NIZRu89Ay1AZmRsLEQ=="],
 
     "html-entities": ["html-entities@2.6.0", "", {}, "sha512-kig+rMn/QOVRvr7c86gQ8lWXq+Hkv6CbAH1hLu+RG338StTpE8Z0b44SDVaqVu7HGKf27frdmUYEs9hTUX/cLQ=="],
@@ -508,7 +504,7 @@
 
     "keyv": ["keyv@4.5.4", "", { "dependencies": { "json-buffer": "3.0.1" } }, "sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw=="],
 
-    "kit10": ["kit10@../kit10/pack-1780585736642.tar.gz", { "dependencies": { "@minify-html/node": "0.18.1", "browserslist": "4.28.2", "esbuild": "0.28.0", "html-rewriter-wasm": "0.4.1", "lightningcss": "1.32.0", "nanoid": "5.1.11" }, "optionalDependencies": { "@hono/node-server": "2.0.4", "hono": "4.12.23" }, "bin": "./dist/main.mjs" }, "sha512-jXM5KzUCFQ/4CRFZ4itQrDi04awp5p24s341gP/n4JPj2UZMVBLBMlt8E4edblvLtYuz5A+obvCRCJlcMrNikg=="],
+    "kit10": ["kit10@../kit10/pack-1781084647069.tar.gz", { "dependencies": { "@minify-html/node": "0.18.1", "browserslist": "4.28.2", "esbuild": "0.28.0", "html-rewriter-wasm": "0.4.1", "lightningcss": "1.32.0", "nanoid": "5.1.11" }, "bin": "./dist/main.mjs" }, "sha512-BKJHRWCH6QXpS/wKXoDIfNR6S/Pi8rYTm8XapBRVT7HFPB8tHmPkyJYgLDv/5uITQvH7AMR6rFIIRXVmM6ZKuQ=="],
 
     "levn": ["levn@0.4.1", "", { "dependencies": { "prelude-ls": "^1.2.1", "type-check": "~0.4.0" } }, "sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ=="],
 

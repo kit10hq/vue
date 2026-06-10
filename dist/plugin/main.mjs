@@ -54,14 +54,14 @@ const vuePlugin = {
 		const oxc = parseSync("anonymous.ts", contents_script_ts);
 		const contents_result = [];
 		for (const node of oxc.program.body) if (node.type === "ExportDefaultDeclaration") {
-			contents_result.push("import { VueCustomElement as _VueCustomElement, defineElement as _defineElement } from \"@kit10/vue/element\";", contents_script_ts.slice(0, node.start), `const __sfc__ = ${contents_script_ts.slice(node.declaration.start, node.declaration.end)};`, contents_script_ts.slice(node.end), `__sfc__.name ??= ${JSON.stringify(name_generic)};`, ...has_styles && has_scoped_styles ? [`__sfc__.__scopeId = "data-v-${id}";`] : [], ...has_styles ? [`const __css = ${JSON.stringify(css)};`] : [], "if (__sfc__.customElement === true) {", "	class _Element extends _VueCustomElement {", "		constructor() {", "			super(__sfc__);", "		}", "	}", `\t_defineElement(__sfc__.name, _Element${has_styles ? `, __css` : ""});`, "}", ...has_styles ? [
+			const var_module = `module_${randomString()}`;
+			const var_sfc = `sfc_${randomString()}`;
+			const var_css = `css_${randomString()}`;
+			contents_result.push(`import * as ${var_module} from "@kit10/vue/element";`, contents_script_ts.slice(0, node.start), `const ${var_sfc} = ${contents_script_ts.slice(node.declaration.start, node.declaration.end)};`, contents_script_ts.slice(node.end), `${var_sfc}.name ??= ${JSON.stringify(name_generic)};`, ...has_styles && has_scoped_styles ? [`${var_sfc}.__scopeId = "data-v-${id}";`] : [], ...has_styles ? [`const ${var_css} = ${JSON.stringify(css)};`] : [], `if (${var_sfc}.customElement) {`, `\tclass _Element extends ${var_module}.VueCustomElement {`, "		constructor() {", `\t\t\tsuper(${var_sfc});`, "		}", "	}", `\t${var_module}.defineElement(${var_sfc}.name, _Element${has_styles ? `, ${var_css}` : ""});`, "}", ...has_styles ? [
 				"else {",
-				"	const element = document.createElement(\"style\");",
-				`\telement.dataset.element = __sfc__.name;`,
-				`\telement.textContent += __css;`,
-				"	document.head.append(element);",
+				`\t${var_module}.addStyles(${var_sfc}.name, ${var_css})`,
 				"}"
-			] : [], "export default __sfc__;");
+			] : [], `export default ${var_sfc};`);
 			break;
 		}
 		if (contents_result.length === 0) throw new Error("No default export found in Vue script.");
