@@ -70,7 +70,7 @@ export function wrapCompiledScript(
 			`\t\t\tsuper(${sfc_var});`,
 			'\t\t}',
 			'\t}',
-			`\t${import_var}.defineElement(${sfc_var}.customElement, _Element${has_styles ? `, ${css_var}` : ''});`,
+			`\t${import_var}.defineElement(${sfc_var}.name, _Element${has_styles ? `, ${css_var}` : ''});`,
 			'} else {',
 			...(has_styles
 				? [`\t${import_var}.addStyles(${sfc_var}.__name, ${css_var});`]
