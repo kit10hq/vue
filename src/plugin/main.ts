@@ -1,6 +1,13 @@
-import { compileScript, compileStyle, parse } from '@vue/compiler-sfc';
+import nodePath from 'node:path';
+import {
+	compileScript,
+	compileStyle,
+	parse,
+	type SFCParseResult,
+} from '@vue/compiler-sfc';
 import type { Artifact, Plugin } from 'kit10';
 import { parseSync } from 'oxc-parser';
+import { getComponentOptions } from './options.js';
 
 /**
  * Generates a random string.
@@ -12,21 +19,65 @@ function randomString(): string {
 
 export const vuePlugin: Plugin = {
 	filter: /\.vue$/u,
+	// oxlint-disable-next-line max-lines-per-function, max-statements
 	async transform(artifact, options) {
-		artifact.meta.vue = true;
-
 		const id = randomString();
-		const name_generic = artifact.path
+		const content = await artifact.text();
+		const sfc = (artifact.meta.vue_sfc as SFCParseResult) ?? parse(content);
+
+		if (artifact.is_page) {
+			const component_options = getComponentOptions(sfc.descriptor);
+			if (typeof component_options.name !== 'string') {
+				throw new TypeError(
+					'Each vue component used as a page must have name defined in defineOptions macro.',
+				);
+			}
+
+			if (component_options.customElement !== true) {
+				throw new TypeError(
+					'Each vue component used as a page must have customElement set to true in defineOptions macro.',
+				);
+			}
+
+			const vueArtifact = artifact.create(
+				artifact.filename.replace(/\+page\.vue$/u, '.vue'),
+			);
+			vueArtifact.update(content);
+			vueArtifact.meta.sfc = sfc;
+
+			artifact.updateExt('html');
+			artifact.update('');
+
+			const kit10_head = sfc.descriptor.customBlocks?.find(
+				(block) => block.type === 'kit10:head',
+			);
+			if (kit10_head) {
+				artifact.append('<kit10:head>\n');
+				artifact.append(kit10_head.content);
+				artifact.append('</kit10:head>\n');
+			}
+
+			artifact.append(
+				`<${
+					component_options.name
+				}>\n<script type="module" src="./${vueArtifact.filename}"></script>\n</${
+					component_options.name
+				}>`,
+			);
+
+			return;
+		}
+
+		const name_generic = artifact.project_path
 			.replace(/\.vue$/u, '')
-			.replaceAll('/', '-');
-		const sfc = parse(artifact.text());
+			.replaceAll(nodePath.sep, '-');
 
 		const contents_script_ts = compileScript(sfc.descriptor, {
 			id,
 			inlineTemplate: true,
 			isProd: options.is_prod,
 			templateOptions: {
-				filename: artifact.path,
+				filename: artifact.project_path,
 				id,
 				compilerOptions: {
 					hoistStatic: true,
@@ -36,36 +87,23 @@ export const vuePlugin: Plugin = {
 			},
 		}).content;
 
-		const has_styles = sfc.descriptor.styles.length > 0;
 		let has_scoped_styles = false;
-		const cssArtifacts = new Set<Artifact>();
-		const promises = [];
+		const cssArtifacts: Artifact[] = [];
 		for (const style of sfc.descriptor.styles) {
 			if (style.scoped) {
 				has_scoped_styles = true;
 			}
 
-			const cssArtifact = artifact.create(style.content, {
-				ext: style.lang ?? 'css',
+			const cssArtifact = artifact.create({
+				ext: `vue.${style.lang ?? 'css'}`,
+				content: style.content,
 			});
+			cssArtifact.meta.id = id;
 			cssArtifact.meta.scoped = style.scoped;
-			cssArtifacts.add(cssArtifact);
-			promises.push(cssArtifact.process());
+			cssArtifacts.push(cssArtifact);
 		}
 
-		await Promise.all(promises);
-
-		let css = '';
-		for (const cssArtifact of cssArtifacts) {
-			css += compileStyle({
-				source: cssArtifact.text(),
-				filename: artifact.path,
-				id: artifact.id,
-				scoped: cssArtifact.meta.scoped === true,
-			}).code;
-
-			cssArtifact.delete();
-		}
+		const has_styles = cssArtifacts.length > 0;
 
 		const oxc = parseSync('anonymous.ts', contents_script_ts);
 		const contents_result: string[] = [];
@@ -77,6 +115,10 @@ export const vuePlugin: Plugin = {
 
 				contents_result.push(
 					`import * as ${var_module} from "@kit10/vue/element";`,
+					...cssArtifacts.map(
+						(cssArtifact) =>
+							`import css_${cssArtifact.id} from "./${cssArtifact.filename}" with { type: "text" };`,
+					),
 					contents_script_ts.slice(0, node.start),
 					`const ${var_sfc} = ${contents_script_ts.slice(node.declaration.start, node.declaration.end)};`,
 					contents_script_ts.slice(node.end),
@@ -84,7 +126,14 @@ export const vuePlugin: Plugin = {
 					...(has_styles && has_scoped_styles
 						? [`${var_sfc}.__scopeId = "data-v-${id}";`]
 						: []),
-					...(has_styles ? [`const ${var_css} = ${JSON.stringify(css)};`] : []),
+					// ...(has_styles ? [`const ${var_css} = ${JSON.stringify(css)};`] : []),
+					...(has_styles
+						? [
+								`const ${var_css} = ${cssArtifacts
+									.map((cssArtifact) => `css_${cssArtifact.id}`)
+									.join(' + ')};`,
+							]
+						: []),
 					// 'console.log(__sfc__.name , __sfc__.customElement);',
 					`if (${var_sfc}.customElement) {`,
 					// '\tconsole.log("register", __sfc__.name , "as custom element");',
@@ -120,5 +169,21 @@ export const vuePlugin: Plugin = {
 
 		artifact.updateExt('ts');
 		artifact.update(contents_result.join('\n'));
+	},
+};
+
+export const vueStylePlugin: Plugin = {
+	filter: /\.vue\.css$/u,
+	async transform(artifact) {
+		let content = await artifact.text();
+
+		content = compileStyle({
+			source: content,
+			filename: artifact.absolute_path,
+			id: artifact.meta.id as string,
+			scoped: artifact.meta.scoped === true,
+		}).code;
+
+		artifact.update(content);
 	},
 };
