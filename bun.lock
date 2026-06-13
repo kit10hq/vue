@@ -20,7 +20,7 @@
         "unplugin-unused": "0.5.7",
       },
       "peerDependencies": {
-        "kit10": "file:../kit10/pack-1781296323657.tar.gz",
+        "kit10": "file:/tmp/devpack/@kit10/kit10/pack-d9eaf42.tar.gz",
         "vue": "3.5.35",
       },
     },
@@ -502,7 +502,7 @@
 
     "keyv": ["keyv@4.5.4", "", { "dependencies": { "json-buffer": "3.0.1" } }, "sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw=="],
 
-    "kit10": ["kit10@../kit10/pack-1781296323657.tar.gz", { "dependencies": { "@minify-html/node": "0.18.1", "browserslist": "4.28.2", "esbuild": "0.28.0", "get-tsconfig": "4.14.0", "html-rewriter-wasm": "0.4.1", "lightningcss": "1.32.0", "nanoid": "5.1.11" }, "bin": "./dist/main.mjs" }, "sha512-pQHIvQDTDFNwTsA0Sn9nZcXKfrni9sgZlnUBeqcvzXZbOsFj4IuHkmF9knrt2Am46RUIkwse/9JYsAy2vJ3d3w=="],
+    "kit10": ["kit10@/tmp/devpack/@kit10/kit10/pack-d9eaf42.tar.gz", { "dependencies": { "@minify-html/node": "0.18.1", "browserslist": "4.28.2", "esbuild": "0.28.0", "get-tsconfig": "4.14.0", "html-rewriter-wasm": "0.4.1", "lightningcss": "1.32.0", "nanoid": "5.1.11" }, "bin": "./dist/main.mjs" }, "sha512-waGh6h0EE2HAWx/0YOEsTybD0eTIls+rTpzCkqJKWp2GGKMh9J8EnsgWtnwunwEvNyBr5XlSjAltNgxLugzpsA=="],
 
     "levn": ["levn@0.4.1", "", { "dependencies": { "prelude-ls": "^1.2.1", "type-check": "~0.4.0" } }, "sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ=="],
 

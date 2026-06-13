@@ -1,5 +1,5 @@
 {
-	"name": "@kit10/vue",
+	"name": "@kit10/plugin-vue",
 	"version": "0.1.0-dev",
 	"description": "Vue.js plugin for kit10.",
 	"publishConfig": {
@@ -24,7 +24,7 @@
 		"oxc-parser": "0.133.0"
 	},
 	"peerDependencies": {
-		"kit10": "file:../kit10/pack-1781296323657.tar.gz",
+		"kit10": "file:/tmp/devpack/@kit10/kit10/pack-d9eaf42.tar.gz",
 		"vue": "3.5.35"
 	},
 	"devDependencies": {
@@ -51,13 +51,17 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/kit10hq/vue.git"
+		"url": "git+https://github.com/kit10hq/plugin-vue.git"
 	},
-	"keywords": [],
+	"keywords": [
+		"kit10",
+		"kit10-plugin",
+		"vue"
+	],
 	"author": "Daniil Kirichenko (https://twitter.com/kirickme)",
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/kit10hq/vue/issues"
+		"url": "https://github.com/kit10hq/plugin-vue/issues"
 	},
-	"homepage": "https://github.com/kit10hq/vue#readme"
+	"homepage": "https://github.com/kit10hq/plugin-vue#readme"
 }

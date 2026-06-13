@@ -114,7 +114,7 @@ export const vuePlugin: Plugin = {
 				const var_css = `css_${randomString()}`;
 
 				contents_result.push(
-					`import * as ${var_module} from "@kit10/vue/element";`,
+					`import * as ${var_module} from "@kit10/plugin-vue/element";`,
 					...cssArtifacts.map(
 						(cssArtifact) =>
 							`import css_${cssArtifact.id} from "./${cssArtifact.filename}" with { type: "text" };`,
