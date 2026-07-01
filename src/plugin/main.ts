@@ -60,7 +60,7 @@ export const vuePlugin: Plugin = {
 			artifact.append(
 				`<${
 					component_options.name
-				}>\n<script type="module" src="./${vueArtifact.filename}"></script>\n</${
+				}>\n<script type="module" src="./${vueArtifact.filename}" kit10:inline></script>\n</${
 					component_options.name
 				}>`,
 			);

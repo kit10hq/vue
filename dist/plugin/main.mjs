@@ -54,7 +54,7 @@ const vuePlugin = {
 				artifact.append(kit10_head.content);
 				artifact.append("</kit10:head>\n");
 			}
-			artifact.append(`<${component_options.name}>\n<script type="module" src="./${vueArtifact.filename}"><\/script>\n</${component_options.name}>`);
+			artifact.append(`<${component_options.name}>\n<script type="module" src="./${vueArtifact.filename}" kit10:inline><\/script>\n</${component_options.name}>`);
 			return;
 		}
 		const name_generic = artifact.project_path.replace(/\.vue$/u, "").replaceAll(nodePath.sep, "-");
