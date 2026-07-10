@@ -24,7 +24,7 @@
 		"oxc-parser": "0.133.0"
 	},
 	"peerDependencies": {
-		"kit10": "file:/tmp/devpack/@kit10/kit10/pack-5eed19a.tar.gz",
+		"kit10": "github:kit10hq/kit10#14d861137e3e982e86083a931cddd953532a43c5",
 		"vue": "3.5.35"
 	},
 	"devDependencies": {
