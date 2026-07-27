@@ -20,7 +20,7 @@
         "unplugin-unused": "0.5.7",
       },
       "peerDependencies": {
-        "kit10": "github:kit10hq/kit10#3b174296b24f9caeb2b81d2187544e3bd1fad21a",
+        "kit10": "github:kit10hq/kit10#7ea9935ca12958bc4c82b2d7378d18a3eaa91cae",
         "vue": "3.5.35",
       },
     },
@@ -510,7 +510,7 @@
 
     "keyv": ["keyv@4.5.4", "", { "dependencies": { "json-buffer": "3.0.1" } }, "sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw=="],
 
-    "kit10": ["kit10@github:kit10hq/kit10#3b17429", { "dependencies": { "@hono/node-server": "2.0.4", "@minify-html/node": "0.18.1", "browserslist": "4.28.2", "chokidar": "5.0.0", "es-toolkit": "1.49.0", "esbuild": "0.28.0", "get-tsconfig": "4.14.0", "hono": "4.12.23", "html-rewriter-wasm": "0.4.1", "lightningcss": "1.32.0", "nanoid": "5.1.11", "neoevents": "0.3.0", "oxc-parser": "0.133.0", "valibot": "1.4.1", "ws": "8.21.0" }, "bin": "./dist/src/main.mjs" }, "kit10hq-kit10-3b17429", "sha512-tthsFBLdcY28kpymtMgV2bziICbbfIopHR/knpWIUPUZXUC1PrOZZDxoJLa5Y/2tg24L+DRxA8W1kS2J0JoV0Q=="],
+    "kit10": ["kit10@github:kit10hq/kit10#7ea9935", { "dependencies": { "@hono/node-server": "2.0.4", "@minify-html/node": "0.18.1", "browserslist": "4.28.2", "chokidar": "5.0.0", "es-toolkit": "1.49.0", "esbuild": "0.28.0", "get-tsconfig": "4.14.0", "hono": "4.12.23", "html-rewriter-wasm": "0.4.1", "lightningcss": "1.32.0", "nanoid": "5.1.11", "neoevents": "0.3.0", "oxc-parser": "0.133.0", "valibot": "1.4.1", "ws": "8.21.0" }, "bin": "./dist/src/main.mjs" }, "kit10hq-kit10-7ea9935", "sha512-UQQES7z1yhDgRrAlETdfAafkc8VjsVsjsi28WgFN52n1WSEAcg2RqRBkzUmSDkui4yNA3+GWHyCuq4IDKAcyMw=="],
 
     "levn": ["levn@0.4.1", "", { "dependencies": { "prelude-ls": "^1.2.1", "type-check": "~0.4.0" } }, "sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ=="],
 
